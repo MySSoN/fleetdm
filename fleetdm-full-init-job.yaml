@@ -1,0 +1,85 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fleetdb-sequential-job
+  namespace: test
+spec:
+  template:
+    spec:
+      volumes:
+      - name: shared-data
+        emptyDir: {}
+
+      containers:
+      - name: step1-mysql-init
+        image: mysql:8.0.36
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Step 1: Creating DB and user...";
+          mysql -h mysql-svc -u root -p$MYSQL_ROOT_PASSWORD -e "
+          CREATE DATABASE IF NOT EXISTS fleetdb;
+          CREATE USER IF NOT EXISTS '$FLEET_MYSQL_USERNAME'@'%' IDENTIFIED BY '$FLEET_MYSQL_PASSWORD';
+          GRANT ALL PRIVILEGES ON fleetdb.* TO '$FLEET_MYSQL_USERNAME'@'%';
+          FLUSH PRIVILEGES;";
+          echo done > /shared/step1.done;
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fleetdb-secrets
+              key: MYSQL_ROOT_PASSWORD
+        - name: FLEET_MYSQL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: fleetdb-secrets
+              key: FLEET_MYSQL_USERNAME
+        - name: FLEET_MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fleetdb-secrets
+              key: FLEET_MYSQL_PASSWORD
+        volumeMounts:
+        - name: shared-data
+          mountPath: /shared
+
+      - name: step2-fleet-prepare
+        image: fleetdm/fleet:v4.67.3
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Step 2: Waiting for step1...";
+          while [ ! -f /shared/step1.done ]; do sleep 1; done;
+          echo "Step 2: Running fleet prepare db...";
+          fleet prepare db;
+        env:
+        - name: FLEET_MYSQL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: fleetdb-secrets
+              key: FLEET_MYSQL_USERNAME
+        - name: FLEET_MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fleetdb-secrets
+              key: FLEET_MYSQL_PASSWORD
+        - name: FLEET_MYSQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: fleetdb-secrets
+              key: FLEET_MYSQL_DATABASE
+        - name: FLEET_MYSQL_ADDRESS
+          value: "mysql-svc:3306"
+        - name: FLEET_REDIS_ADDRESS
+          value: "redis-svc:6379"
+        - name: FLEET_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fleetdb-secrets
+              key: FLEET_REDIS_PASSWORD
+        volumeMounts:
+        - name: shared-data
+          mountPath: /shared
+
+      restartPolicy: Never

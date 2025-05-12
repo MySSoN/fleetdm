@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: test
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0.36
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: fleetdb-secrets
+                  key: MYSQL_ROOT_PASSWORD
+#          volumeMounts:
+#            - mountPath: "/var/lib/mysql"
+#              name: "data"
+#      volumes:
+#        - hostPath:
+#            path: "/opt/dev-mysql-test"
+#          name: data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc
+  namespace: test
+spec:
+  ports:
+  - protocol: TCP
+    port: 3306
+    targetPort: 3306
+    name: mysql
+  selector:
+    app: mysql
+  type: ClusterIP

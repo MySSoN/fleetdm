@@ -32,6 +32,8 @@ Installation Guide:
    5.2 Ingress Example:
        kubectl apply -f ./ingress-nginx-example.yaml
 
+6. Autoscaling configs using HPA (Metrics Server must be installed) + ClusterAutoscaler or Karpenter
+
 Notes:
 - Secrets (passwords, credentials) are stored in fleetdb-secrets.yaml
 - Configurations like DB and Redis addresses are in fleetdm-config.yaml

@@ -1,6 +1,6 @@
 FleetDM Kubernetes Deployment Guide
 
-Planned Improvements:
+Posible Improvements:
 1. Enable TLS for FleetDM web API (Ingress with HTTPS)
 2. Enable HTTPS access for Fleet and update Kubernetes manifests
 3. Move more configuration to ConfigMaps & Secrets for better maintainability

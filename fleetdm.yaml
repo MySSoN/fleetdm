@@ -25,6 +25,13 @@ spec:
         - --server_tls=false
         ports:
         - containerPort: 8080
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
         env:
         - name: FLEET_MYSQL_USERNAME
           valueFrom:

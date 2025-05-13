@@ -1,0 +1,20 @@
+name: Simple CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install python3-pip
+        run: sudo apt update && sudo apt install -y python3-pip
+
+      - name: Run hello.py script
+        run: python3 ci/hello.py
